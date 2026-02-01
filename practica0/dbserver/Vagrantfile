@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require_relative '../provisioning/vbox.rb'
+VBoxUtils.check_version('7.2.4')
+Vagrant.require_version ">= 2.4.9"
+
+class VagrantPlugins::ProviderVirtualBox::Action::Network
+  def dhcp_server_matches_config?(dhcp_server, config)
+    true
+  end
+end
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "XXX"
+    config.vm.box_version = "XXX"
+    config.vm.box_check_update = false
+    config.vm.hostname = "dbserver"
+    config.vm.network "XXX", ip: "XXX"
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.manage_guest = true
+
+    config.vm.provider "virtualbox" do |vb|
+	vb.name = "AISI-P0-#{config.vm.hostname}"
+	vb.gui = false
+	vb.cpus = 1
+	vb.memory = 1024
+	vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    end
+
+    config.vm.provision "db", type: "XXX", run: "XXX", path: "provisioning/db.sh"
+end

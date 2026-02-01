@@ -1,0 +1,71 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require_relative 'provisioning/vbox.rb'
+VBoxUtils.check_version('7.2.4')
+Vagrant.require_version ">= 2.4.9"
+
+class VagrantPlugins::ProviderVirtualBox::Action::Network
+  def dhcp_server_matches_config?(dhcp_server, config)
+    true
+  end
+end
+
+Vagrant.configure("2") do |config|
+    # Box and hostname settings
+    config.vm.box = "rreye/debian-13"
+    config.vm.box_version = "20260113"
+    config.vm.box_check_update = false
+    config.vm.hostname = "srg2526" # You MUST use your student PREFIX here
+
+    # Network and port forwarding settings
+    config.vm.network "forwarded_port", guest: 80, host: 8080
+    config.vm.network "private_network", type: "dhcp"
+    config.vm.network "private_network", ip: "192.168.56.10"
+
+    # Synced folder
+    config.vm.synced_folder "html/", "/var/www/html", mount_options: ["dmode=755,fmode=644"]
+
+    # Configure hostmanager plugin
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.manage_guest = true
+
+    # Provider-specific customizations (CPU, memory, disk...)
+    config.vm.provider "virtualbox" do |vb|
+	vb.name = "AISI-P0-#{config.vm.hostname}"
+	vb.gui = false
+	vb.cpus = 2
+	vb.memory = 2048
+  vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+  
+	sasController = "SAS Controller"
+	diskFile = "VMdisk-SAS.vmdk"
+	
+	# Create the virtual disk if doesn't exist
+	unless File.exist?(diskFile)
+		vb.customize ["createmedium", "disk", "--filename", diskFile, "--format", "VMDK", "--size", 5120]
+	end
+
+	# Add storage SAS controller only when the VM is provisioned for the first time
+	unless File.exist?(".vagrant/machines/default/virtualbox/action_provision")
+		vb.customize ["storagectl", :id, "--name", sasController, "--add", "sas", "--portcount", 1]
+	end
+
+	# Attach the virtual disk into the storage SAS controller
+	vb.customize ["storageattach", :id, "--storagectl", sasController, "--port", 0, "--device", 0, "--type", "hdd", "--medium", diskFile]
+    end
+
+    # VM provisioning through an inline shell script
+    config.vm.provision "bootstrap", type: "shell", run: "once", inline: <<-SHELL
+	apt update
+	# Complete the following commands
+	apt install -y apache2 php php-mysqli
+	systemctl enable apache2
+	systemctl start apache2
+	mkdir -p /mnt/srg2526
+    SHELL
+    
+    # VM provisioning through external shell scripts
+    config.vm.provision "disk", type: "shell", run: "always", path: "provisioning/manageDisk.sh", args: "/mnt/srg2526"
+    config.vm.provision "info", type: "shell", run: "never", path: "provisioning/script.sh", args: "/mnt/srg2526"
+end
