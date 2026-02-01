@@ -1,5 +1,5 @@
 <?php
-   $database="X";
+   $database="srg2526";
    
   // Set address book variables
   isset($_REQUEST['mode']) ? $mode=$_REQUEST['mode'] : $mode="";
