@@ -1,0 +1,60 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require_relative 'provisioning/vbox.rb'
+VBoxUtils.check_version('7.2.4')
+Vagrant.require_version ">= 2.4.9"
+
+STUDEN_PREFIX = "srg2526"
+BOX_NAME = "#{STUDEN_PREFIX}/debian-13"
+# Hostnames for manager and workers
+MANAGER_HOSTNAME = "#{STUDEN_PREFIX}-docker"
+WORKER_HOSTNAME = "#{STUDEN_PREFIX}-docker-worker"
+DEPLOY_WORKER=false
+
+MANAGER_IP = "192.168.56.10"
+WORKER_IP = "192.168.56.11"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = BOX_NAME
+
+  # Configure hostmanager plugin
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+
+  # Manager node
+  config.vm.define "manager", primary: true do |manager|
+    manager.vm.hostname = MANAGER_HOSTNAME
+    manager.vm.network "private_network", ip: MANAGER_IP
+    manager.vm.network "forwarded_port", guest: 80, host: 8080
+
+    manager.vm.provider "virtualbox" do |vb|
+      vb.name = "AISI-P2-#{manager.vm.hostname}"
+      vb.cpus = 1
+      vb.memory = 1024
+      vb.gui = false
+      vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    end
+  end
+  
+  # Worker node
+  if DEPLOY_WORKER
+    config.vm.define "worker" do |worker|
+      worker.vm.hostname = WORKER_HOSTNAME
+      worker.vm.network "private_network", ip: WORKER_IP
+      worker.vm.network "forwarded_port", guest: 80, host: 9090
+            
+      worker.vm.provider "virtualbox" do |vb|
+        vb.name = "AISI-P2-#{worker.vm.hostname}"
+        vb.cpus = 1
+        vb.memory = 1024
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+      end
+    end
+  end
+  
+  config.vm.provision "bootstrap", type: "shell", run: "always", path: "provisioning/bootstrap.sh" do |script|
+      script.args = [MANAGER_HOSTNAME, MANAGER_IP]
+  end
+end

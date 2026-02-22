@@ -1,0 +1,28 @@
+Vagrant.configure("2") do |config|
+  config.vm.define "source", autostart: false do |source|
+	source.vm.box = "rreye/debian-13"
+	source.vm.box_check_update = false
+	config.ssh.insert_key = false
+  end
+  
+  config.vm.define "output" do |output|
+	output.vm.box = "packer_aisi"
+	output.vm.box_url = "file://package.box"
+	config.ssh.insert_key = false
+  end
+  
+  config.vm.boot_timeout = 600
+  
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  
+  # Provider-specific settings
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+    v.cpus = 1
+    v.linked_clone = false
+    v.gui = false
+    v.customize ["modifyvm", :id, "--vrde", "off"]
+    v.customize ["modifyvm", :id, "--vram", 32]
+    v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+  end
+end

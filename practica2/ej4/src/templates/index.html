@@ -1,0 +1,36 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GEI AISI</title>
+    <script type="text/javascript">
+	function getName() {
+		var name = "Santiago Rey García";
+		document.getElementById("myName").innerHTML = name;
+	}
+        function getURL() {
+        	document.write("URL: " + window.location.href);
+        }
+	function getTIME() {
+		document.getElementById("current_date").innerHTML = Date();
+    	}
+    </script>
+</head>
+<body onload="getName()">
+	<div style="width:600px;height:{{ height }};border:2px solid #000;text-align: center;">
+	<strong>
+	<h3><u>GEI AISI: 2025/2026</u></h3>
+		<p><u>Flask+Redis WebApp (Docker)</u></p>
+		<p>Página web de <span id="myName"></span></p>
+
+		<p><script>getURL();</script></p>
+		<p><div id="current_date"><script>getTIME();</script></p>
+		<p>Redis container: <span style="color: green;"> {{ redis_host }}</span></p>
+		<p>Redis connection status: {{ result }}</p>
+		<p>Redis counter: {{ counter }}</p>
+		<p>Server ID: <span style="color: green;"> {{ server_hostname }}</span>
+		| Server IP: <span style="color: green;"> {{ server_ip }}</span>
+		| Client IP: <span style="color: green;"> {{ client_ip }}</span></p>
+	</strong>
+	</div>
+</body>
+</html>
