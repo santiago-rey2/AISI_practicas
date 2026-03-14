@@ -1,0 +1,70 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require_relative 'provisioning/vbox.rb'
+VBoxUtils.check_version('7.2.4')
+Vagrant.require_version ">= 2.4.9"
+
+STUDEN_PREFIX = "srg2526"
+# Ansible controller
+ansible_controller_hostname = "#{STUDEN_PREFIX}-ansible"
+# Web application server
+webapp_hostname = "#{STUDEN_PREFIX}-web"
+# Database server
+db_hostname = "#{STUDEN_PREFIX}-db"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "rreye/rocky-9"
+  config.vm.box_version = "20260213"
+  config.vm.box_check_update = false
+  
+  # Configure hostmanager plugin
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+
+  # Ansible controller
+  config.vm.define "ansible", primary: true do |ansible|
+    ansible.vm.hostname = ansible_controller_hostname
+    ansible.vm.network "private_network", ip: "192.168.56.20"
+    ansible.vm.provision "shell", run: "once", path: "provisioning/ansible-controller.sh"
+
+    ansible.vm.provider "virtualbox" do |vb|
+	vb.name = "AISI-P3-EJ1-#{ansible.vm.hostname}"
+        vb.cpus = 1
+        vb.memory = 1024
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    end
+  end
+
+  # Web application server
+  config.vm.define "web" do |web|
+    web.vm.hostname = webapp_hostname
+    web.vm.network "forwarded_port", guest: 80, host: 8080
+    web.vm.network "private_network", ip: "192.168.56.21"
+    web.vm.provision "shell", run: "once", path: "provisioning/servers.sh"
+
+    web.vm.provider "virtualbox" do |vb|
+	vb.name = "AISI-P3-EJ1-#{web.vm.hostname}"
+        vb.cpus = 1
+        vb.memory = 1024
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    end
+  end
+
+  # Database server
+  config.vm.define "db" do |db|
+    db.vm.hostname = db_hostname
+    db.vm.network "private_network", ip: "192.168.56.22"
+    db.vm.provision "shell", run: "once", path: "provisioning/servers.sh"
+
+    db.vm.provider "virtualbox" do |vb|
+	vb.name = "AISI-P3-EJ1-#{db.vm.hostname}"
+        vb.cpus = 1
+        vb.memory = 1024
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    end
+  end
+end

@@ -1,0 +1,5 @@
+student_prefix: "srg2526"
+monitoring_dir: "/home/vagrant"
+prometheus_service: "{{ student_prefix }}-prometheus"
+grafana_service: "{{ student_prefix }}-grafana"
+exporter_service: "{{ student_prefix }}-exporter"

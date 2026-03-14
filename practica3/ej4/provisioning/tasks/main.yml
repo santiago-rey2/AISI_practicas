@@ -1,0 +1,33 @@
+- name: Create data directories
+  ansible.builtin.file:
+    path: "{{ monitoring_dir }}/{{ item }}"
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: '0755'
+  loop:
+    - prometheus_data
+    - grafana_data
+
+- name: Copy configuration directories
+  ansible.builtin.copy:
+    src: "./{{ item }}"
+    dest: "{{ monitoring_dir }}"
+    owner: vagrant
+    group: vagrant
+    mode: '0644'
+    directory_mode: '0755'
+  loop:
+    - grafana_config
+    - prometheus_config
+ 
+- name: Copy docker-compose.yml
+  ansible.builtin.template:
+    src: compose.yml
+    dest: "{{ monitoring_dir }}/compose.yml"
+
+- name: Deploy containers with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    state: present
+    pull: always

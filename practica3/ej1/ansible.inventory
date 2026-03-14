@@ -1,0 +1,10 @@
+# Web application server
+[web]
+srg2526-web
+# Database server
+[db]
+srg2526-db
+# Group 'servers' with web and db
+[servers:children]
+web
+db
